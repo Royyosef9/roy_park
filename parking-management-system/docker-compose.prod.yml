@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    container_name: parking_backend
+    restart: always
+    env_file: ./secrets/.env.prod
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    networks:
+      - parking_network
+
+  frontend:
+    build: ./frontend
+    container_name: parking_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - parking_network
+
+  db:
+    image: postgres:15
+    container_name: parking_db
+    restart: always
+    env_file: ./secrets/.env.prod
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - parking_network
+
+  redis:
+    image: redis:alpine
+    container_name: parking_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - parking_network
+
+  nginx:
+    build: ./nginx
+    container_name: parking_nginx
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - parking_network
+
+volumes:
+  postgres_data:
+
+networks:
+  parking_network:
+    driver: bridge
